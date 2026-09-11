@@ -3,6 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import db from './db/db.js';
 
+// Routes
+import authRoutes from './routes/auth.routes.js';
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -11,43 +14,46 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check / Root Route
+// Attach sendStructuredResponse to every res object
+app.use((req, res, next) => {
+    res.sendStructuredResponse = (statusCode, message, data = null) => {
+        return res.status(statusCode).json({
+            status: statusCode,
+            message,
+            data,
+        });
+    };
+    next();
+});
+
+// API Routes
+app.use('/api/v1/auth', authRoutes);
+
+// Health Check
 app.get('/', async (req, res) => {
     try {
         const dbRes = await db.query('SELECT NOW()');
-        res.status(200).json({
-            message: 'Backend server is active and running!',
-            status: 'success',
+        res.sendStructuredResponse(200, 'Backend server is active and running!', {
             database: 'connected',
             serverTime: dbRes.rows[0].now,
-            timestamp: new Date().toISOString(),
         });
     } catch (error) {
-        res.status(200).json({
-            message: 'Backend server is active and running!',
-            status: 'degraded',
+        res.sendStructuredResponse(200, 'Backend server is active (DB degraded)', {
             database: 'disconnected',
             dbError: error.message,
-            timestamp: new Date().toISOString(),
         });
     }
 });
 
-// 404 Route Handler
+// 404 Handler
 app.use((req, res) => {
-    res.status(404).json({
-        status: 'error',
-        message: `Route not found: ${req.originalUrl}`,
-    });
+    res.sendStructuredResponse(404, `Route not found: ${req.originalUrl}`, null);
 });
 
 // Global Error Handler
 app.use((err, req, res, next) => {
     console.error('Unhandled Error:', err);
-    res.status(err.status || 500).json({
-        status: 'error',
-        message: err.message || 'Internal Server Error',
-    });
+    res.sendStructuredResponse(err.status || 500, err.message || 'Internal Server Error', null);
 });
 
 app.listen(PORT, () => {
