@@ -8,10 +8,12 @@ export const PatientsDirectoryScreen: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'on_track' | 'needs_review'>('all');
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
 
-  const filteredPatients = assignedPatients.filter((p: any) => {
+  const filteredPatients = (assignedPatients || []).filter((p: any) => {
+    const pName = p.name || p.username || p.user_id || '';
+    const planName = p.plan_name || 'Active Rehabilitation Plan';
     const matchesSearch =
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.plan_name.toLowerCase().includes(searchTerm.toLowerCase());
+      pName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      planName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = statusFilter === 'all' ? true : p.status === statusFilter;
     return matchesSearch && matchesFilter;
   });
@@ -89,65 +91,78 @@ export const PatientsDirectoryScreen: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredPatients.map((p: any) => {
-                const isOnTrack = p.status === 'on_track';
-                return (
-                  <tr key={p.patient_id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3.5 pr-4">
-                      <div className="font-bold text-slate-900">{p.name}</div>
-                      <div className="text-[11px] text-slate-400">
-                        {p.age} y/o &bull; {p.sex || 'Female'}
-                      </div>
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <div className="font-medium text-slate-800">{p.surgery_type || 'Knee Surgery'}</div>
-                      <div className="text-[11px] text-slate-400">{p.surgery_date || 'Aug 2026'}</div>
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <div className="font-medium text-slate-800">{p.plan_name}</div>
-                    </td>
-                    <td className="py-3.5 pr-4">
-                      <div className="w-32">
-                        <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                          <span>{p.progress}%</span>
+              {filteredPatients.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-400">
+                    No matching patients found in your clinical caseload.
+                  </td>
+                </tr>
+              ) : (
+                filteredPatients.map((p: any) => {
+                  const isOnTrack = p.status !== 'needs_review';
+                  const name = p.name || p.username || p.user_id || 'Patient';
+                  const planTitle = p.plan_name || 'Post-operative Recovery Protocol';
+                  const progressPct = p.progress !== undefined ? p.progress : 0;
+                  const reviewStr = p.last_review || 'Active';
+
+                  return (
+                    <tr key={p.patient_id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 pr-4">
+                        <div className="font-bold text-slate-900">{name}</div>
+                        <div className="text-[11px] text-slate-400">
+                          {p.age} y/o &bull; {p.sex || 'Patient'}
                         </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${isOnTrack ? 'bg-emerald-600' : 'bg-amber-500'}`}
-                            style={{ width: `${p.progress}%` }}
-                          />
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <div className="font-medium text-slate-800">{p.surgery_type || 'Orthopaedic Surgery'}</div>
+                        <div className="text-[11px] text-slate-400">{p.surgery_date || 'Aug 2026'}</div>
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <div className="font-medium text-slate-800">{planTitle}</div>
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <div className="w-32">
+                          <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                            <span>{progressPct}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${isOnTrack ? 'bg-emerald-600' : 'bg-amber-500'}`}
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 pr-4 text-slate-600">{p.last_review}</td>
-                    <td className="py-3.5 pr-4">
-                      <span
-                        className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
-                          isOnTrack
-                            ? 'bg-emerald-50 text-emerald-800'
-                            : 'bg-amber-50 text-amber-800'
-                        }`}
-                      >
-                        {isOnTrack ? (
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        ) : (
-                          <AlertTriangle className="w-3 h-3 text-amber-600" />
-                        )}
-                        <span>{isOnTrack ? 'On Track' : 'Needs Review'}</span>
-                      </span>
-                    </td>
-                    <td className="py-3.5 text-right">
-                      <button
-                        onClick={() => setSelectedPatient(p)}
-                        className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Inspect</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td className="py-3.5 pr-4 text-slate-600">{reviewStr}</td>
+                      <td className="py-3.5 pr-4">
+                        <span
+                          className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+                            isOnTrack
+                              ? 'bg-emerald-50 text-emerald-800'
+                              : 'bg-amber-50 text-amber-800'
+                          }`}
+                        >
+                          {isOnTrack ? (
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          ) : (
+                            <AlertTriangle className="w-3 h-3 text-amber-600" />
+                          )}
+                          <span>{isOnTrack ? 'On Track' : 'Needs Review'}</span>
+                        </span>
+                      </td>
+                      <td className="py-3.5 text-right">
+                        <button
+                          onClick={() => setSelectedPatient(p)}
+                          className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Inspect</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

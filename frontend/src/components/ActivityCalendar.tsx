@@ -5,11 +5,13 @@ import { DEMO_CALENDAR_STATUS } from '../lib/api';
 interface ActivityCalendarProps {
   patientName?: string;
   onSelectDate?: (date: string) => void;
+  tasks?: any[];
 }
 
 export const ActivityCalendar: React.FC<ActivityCalendarProps> = ({
   patientName = 'Maya Patel',
   onSelectDate,
+  tasks,
 }) => {
   const [selectedDay, setSelectedDay] = useState<number>(11);
 
@@ -158,41 +160,75 @@ export const ActivityCalendar: React.FC<ActivityCalendarProps> = ({
           {/* Scheduled Tasks for Day */}
           <div className="pt-2">
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">
-              Scheduled Tasks
+              Scheduled Tasks ({tasks && tasks.length > 0 ? tasks.length : 3})
             </div>
             <div className="space-y-2 text-xs">
-              <div className="p-2.5 bg-white border border-slate-200/60 rounded-lg flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Complete knee mobility exercises</span>
-                </div>
-                <div className="flex items-center text-slate-400 text-[11px]">
-                  <Clock className="w-3 h-3 mr-1" />
-                  <span>8:00 AM</span>
-                </div>
-              </div>
+              {tasks && tasks.length > 0 ? (
+                tasks.map((task: any) => (
+                  <div
+                    key={task.id || task.task_id}
+                    className="p-2.5 bg-white border border-slate-200/60 rounded-lg flex items-center justify-between"
+                  >
+                    <div className="flex items-center space-x-2 text-slate-700">
+                      <CheckCircle2
+                        className={`w-3.5 h-3.5 ${
+                          task.completed || task.status === 'completed'
+                            ? 'text-emerald-600'
+                            : 'text-slate-300'
+                        }`}
+                      />
+                      <span
+                        className={
+                          task.completed || task.status === 'completed'
+                            ? 'line-through text-slate-400'
+                            : 'font-medium text-slate-700'
+                        }
+                      >
+                        {task.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-slate-400 text-[11px]">
+                      <Clock className="w-3 h-3 mr-1" />
+                      <span>{task.schedule_times?.[0] || 'Daily'}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="p-2.5 bg-white border border-slate-200/60 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-slate-700">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Complete knee mobility exercises</span>
+                    </div>
+                    <div className="flex items-center text-slate-400 text-[11px]">
+                      <Clock className="w-3 h-3 mr-1" />
+                      <span>8:00 AM</span>
+                    </div>
+                  </div>
 
-              <div className="p-2.5 bg-white border border-slate-200/60 rounded-lg flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Take prescribed medication</span>
-                </div>
-                <div className="flex items-center text-slate-400 text-[11px]">
-                  <Clock className="w-3 h-3 mr-1" />
-                  <span>1:00 PM</span>
-                </div>
-              </div>
+                  <div className="p-2.5 bg-white border border-slate-200/60 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-slate-700">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Take prescribed medication</span>
+                    </div>
+                    <div className="flex items-center text-slate-400 text-[11px]">
+                      <Clock className="w-3 h-3 mr-1" />
+                      <span>1:00 PM</span>
+                    </div>
+                  </div>
 
-              <div className="p-2.5 bg-white border border-slate-200/60 rounded-lg flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Walk for 15 minutes</span>
-                </div>
-                <div className="flex items-center text-slate-400 text-[11px]">
-                  <Clock className="w-3 h-3 mr-1" />
-                  <span>5:00 PM</span>
-                </div>
-              </div>
+                  <div className="p-2.5 bg-white border border-slate-200/60 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-slate-700">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Walk for 15 minutes</span>
+                    </div>
+                    <div className="flex items-center text-slate-400 text-[11px]">
+                      <Clock className="w-3 h-3 mr-1" />
+                      <span>5:00 PM</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

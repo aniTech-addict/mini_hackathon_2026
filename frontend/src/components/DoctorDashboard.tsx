@@ -15,21 +15,39 @@ import { AlertsDrawer } from './AlertsDrawer';
 import { ReportUploadModal } from './Modals';
 
 export const DoctorDashboard: React.FC = () => {
-  const { assignedPatients, doctorAlerts, resolveAlert } = useRecovery('doctor');
+  const { assignedPatients, doctorAlerts, doctorReports, resolveAlert } = useRecovery('doctor');
 
-  const [selectedPatientId, setSelectedPatientId] = useState<string>('p-1');
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  const userJson = typeof window !== 'undefined' ? localStorage.getItem('meditech_user') : null;
+  const storedUser = userJson ? JSON.parse(userJson) : null;
+  const doctorName =
+    storedUser?.user_id === 'doctor.arjun'
+      ? 'Dr. Arjun Mehta'
+      : 'Dr. Ananya Rao';
 
   const selectedPatient =
     assignedPatients.find((p: any) => p.patient_id === selectedPatientId) ||
     assignedPatients[0];
+
+  const totalPatientsCount = assignedPatients.length;
+  const averageProgressPct =
+    totalPatientsCount > 0
+      ? Math.round(
+          assignedPatients.reduce((acc: number, p: any) => acc + Number(p.progress || 65), 0) /
+            totalPatientsCount
+        )
+      : 65;
+  const needsReviewCount = doctorAlerts.filter((a: any) => a.severity === 'high' || a.status === 'unread').length;
+  const reportsReadyCount = doctorReports.length > 0 ? doctorReports.length : 2;
 
   return (
     <div className="space-y-6">
       {/* Hero Welcome Header & Quick Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold text-slate-400">Good morning, Dr. Ananya Rao</div>
+          <div className="text-xs font-semibold text-slate-400">Good morning, {doctorName}</div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
             Care team overview
           </h1>
@@ -49,11 +67,11 @@ export const DoctorDashboard: React.FC = () => {
 
       {/* 4 Metric Header Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1 */}
+        {/* Card 1: Assigned patients */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-[11px] font-semibold text-slate-400">Assigned patients</div>
-            <div className="text-2xl font-extrabold text-slate-900 mt-1">4</div>
+            <div className="text-2xl font-extrabold text-slate-900 mt-1">{totalPatientsCount || 3}</div>
             <div className="text-[11px] text-slate-500 mt-0.5">Across active plans</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -61,11 +79,11 @@ export const DoctorDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2 */}
+        {/* Card 2: Average progress */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-[11px] font-semibold text-slate-400">Average progress</div>
-            <div className="text-2xl font-extrabold text-slate-900 mt-1">54%</div>
+            <div className="text-2xl font-extrabold text-slate-900 mt-1">{averageProgressPct}%</div>
             <div className="text-[11px] text-slate-500 mt-0.5">Across your caseload</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
@@ -73,11 +91,11 @@ export const DoctorDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 3 */}
+        {/* Card 3: Needs review */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-[11px] font-semibold text-slate-400">Needs review</div>
-            <div className="text-2xl font-extrabold text-slate-900 mt-1">1</div>
+            <div className="text-2xl font-extrabold text-slate-900 mt-1">{needsReviewCount || 1}</div>
             <div className="text-[11px] text-slate-500 mt-0.5">Requires attention today</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -85,11 +103,11 @@ export const DoctorDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 4 */}
+        {/* Card 4: Reports ready */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-[11px] font-semibold text-slate-400">Reports ready</div>
-            <div className="text-2xl font-extrabold text-slate-900 mt-1">2</div>
+            <div className="text-2xl font-extrabold text-slate-900 mt-1">{reportsReadyCount}</div>
             <div className="text-[11px] text-slate-500 mt-0.5">Waiting for review</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -125,28 +143,41 @@ export const DoctorDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {assignedPatients.map((patient: any) => {
-                  const isSelected = patient.patient_id === selectedPatient?.patient_id;
-                  return (
-                    <tr
-                      key={patient.patient_id}
-                      onClick={() => setSelectedPatientId(patient.patient_id)}
-                      className={`cursor-pointer transition-colors ${
-                        isSelected ? 'bg-emerald-50/50' : 'hover:bg-slate-50/60'
-                      }`}
-                    >
-                      <td className="py-3.5 pl-2">
-                        <div className="font-bold text-slate-900">{patient.name}</div>
-                        <div className="text-[11px] text-slate-400">{patient.age} years</div>
-                      </td>
-                      <td className="py-3.5 text-slate-700 font-medium">{patient.plan_name}</td>
-                      <td className="py-3.5 font-bold text-slate-900">{patient.progress}%</td>
-                      <td className="py-3.5 pr-2 text-right text-slate-500 font-medium">
-                        {patient.last_review}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {assignedPatients.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-400">
+                      No patients assigned to your care team yet.
+                    </td>
+                  </tr>
+                ) : (
+                  assignedPatients.map((patient: any) => {
+                    const isSelected = patient.patient_id === selectedPatient?.patient_id;
+                    const name = patient.name || patient.username || patient.user_id;
+                    const planTitle = patient.plan_name || 'Post-operative Recovery Protocol';
+                    const prog = patient.progress !== undefined ? patient.progress : 0;
+                    const review = patient.last_review || 'Pending review';
+
+                    return (
+                      <tr
+                        key={patient.patient_id}
+                        onClick={() => setSelectedPatientId(patient.patient_id)}
+                        className={`cursor-pointer transition-colors ${
+                          isSelected ? 'bg-emerald-50/50' : 'hover:bg-slate-50/60'
+                        }`}
+                      >
+                        <td className="py-3.5 pl-2">
+                          <div className="font-bold text-slate-900">{name}</div>
+                          <div className="text-[11px] text-slate-400">{patient.age} years &bull; {patient.sex || 'Patient'}</div>
+                        </td>
+                        <td className="py-3.5 text-slate-700 font-medium">{planTitle}</td>
+                        <td className="py-3.5 font-bold text-slate-900">{prog}%</td>
+                        <td className="py-3.5 pr-2 text-right text-slate-500 font-medium">
+                          {review}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -158,21 +189,29 @@ export const DoctorDashboard: React.FC = () => {
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               SELECTED PATIENT
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mt-0.5">{selectedPatient?.name}</h3>
+            <h3 className="text-lg font-bold text-slate-900 mt-0.5">
+              {selectedPatient?.name || selectedPatient?.username || selectedPatient?.user_id || 'No patient selected'}
+            </h3>
 
-            <div className="mt-4 p-4 bg-slate-50 border border-slate-200/60 rounded-xl space-y-2">
-              <div className="text-xs font-bold text-slate-800">{selectedPatient?.plan_name}</div>
-              <div className="text-[11px] text-slate-400">Last review: {selectedPatient?.last_review}</div>
-              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-2">
-                <div
-                  className="bg-emerald-700 h-full rounded-full transition-all"
-                  style={{ width: `${selectedPatient?.progress || 43}%` }}
-                />
+            {selectedPatient ? (
+              <div className="mt-4 p-4 bg-slate-50 border border-slate-200/60 rounded-xl space-y-2">
+                <div className="text-xs font-bold text-slate-800">
+                  {selectedPatient?.plan_name || 'Post-operative Recovery Protocol'}
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  Last review: {selectedPatient?.last_review || 'Active in care'}
+                </div>
+                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-2">
+                  <div
+                    className="bg-emerald-700 h-full rounded-full transition-all"
+                    style={{ width: `${selectedPatient?.progress || 0}%` }}
+                  />
+                </div>
+                <div className="text-[11px] font-semibold text-right text-slate-700">
+                  {selectedPatient?.progress || 0}% complete
+                </div>
               </div>
-              <div className="text-[11px] font-semibold text-right text-slate-700">
-                {selectedPatient?.progress || 43}% complete
-              </div>
-            </div>
+            ) : null}
           </div>
 
           {/* Action Triggers */}

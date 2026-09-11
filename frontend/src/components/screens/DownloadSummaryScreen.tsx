@@ -87,7 +87,7 @@ export const DownloadSummaryScreen: React.FC = () => {
         <div className="space-y-2">
           <div className="text-xs font-bold text-slate-900">Current Prescribed Activities</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-            {recoveryPlan.tasks.map((t: any) => (
+            {(recoveryPlan?.tasks || []).map((t: any) => (
               <div key={t.id} className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50 flex items-center justify-between">
                 <span className="font-medium text-slate-800">{t.title}</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">

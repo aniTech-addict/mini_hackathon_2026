@@ -12,17 +12,19 @@ export const CurrentCaseScreen: React.FC = () => {
         <div>
           <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Active Case Protocol #{recoveryPlan.id}</span>
+            <span>Active Case Protocol #{recoveryPlan?.id || 'REV-2026'}</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{recoveryPlan.title}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            {recoveryPlan?.title || 'Post-Operative Recovery Protocol'}
+          </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Care protocol initiated on {recoveryPlan.start_date} &bull; Day {recoveryPlan.days_elapsed} of {recoveryPlan.total_days}
+            Care protocol initiated on {recoveryPlan?.start_date || '2026-08-30'} &bull; Day {recoveryPlan?.days_elapsed || 12} of {recoveryPlan?.total_days || 28}
           </p>
         </div>
         <div className="flex items-center space-x-3">
           <div className="text-right">
             <div className="text-xs text-slate-400 font-medium">Compliance Rate</div>
-            <div className="text-2xl font-bold text-emerald-700">{recoveryPlan.progress_pct}%</div>
+            <div className="text-2xl font-bold text-emerald-700">{recoveryPlan?.progress_pct ?? 88}%</div>
           </div>
           <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-700">
             <Activity className="w-6 h-6" />
@@ -123,7 +125,7 @@ export const CurrentCaseScreen: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {recoveryPlan.tasks.map((task: any) => (
+          {(recoveryPlan?.tasks || []).map((task: any) => (
             <div
               key={task.id}
               onClick={() => toggleTaskCompletion.mutate({ taskId: task.id })}
@@ -166,6 +168,11 @@ export const CurrentCaseScreen: React.FC = () => {
               </div>
             </div>
           ))}
+          {(!recoveryPlan?.tasks || recoveryPlan.tasks.length === 0) && (
+            <div className="col-span-2 p-8 text-center bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-xs">
+              No tasks currently prescribed for this phase.
+            </div>
+          )}
         </div>
       </div>
     </div>

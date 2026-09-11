@@ -1,16 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  api,
-  DEMO_PATIENTS_LIST,
-  DEMO_TASKS,
-  DEMO_ALERTS,
-  DEMO_REVIEWS_CHART,
-  DEMO_REPORTS,
-  DEMO_EXTRACTED_DATA,
-  DEMO_PATIENT_FILE,
-  DEMO_ADHERENCE,
-} from '../lib/api';
-import { RecoveryPlanSchema, CareAlertSchema } from '../lib/schemas/recovery';
+import { api } from '../lib/api';
 
 export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
   const queryClient = useQueryClient();
@@ -24,45 +13,44 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
 
   const recoveryPlanQuery = useQuery({
     queryKey: ['patient', 'recovery-plan'],
-    queryFn: async () => {
-      const data = await api.getRecoveryPlan();
-      return RecoveryPlanSchema.parse(data);
-    },
+    queryFn: () => api.getRecoveryPlan(),
     enabled: role === 'patient',
-    initialData: {
-      id: 'plan-1',
-      title: 'Post-operative knee recovery',
-      status: 'active' as const,
-      start_date: '2026-08-30',
-      days_elapsed: 12,
-      total_days: 28,
-      progress_pct: 43,
-      tasks: DEMO_TASKS,
-    },
+  });
+
+  const planProgressQuery = useQuery({
+    queryKey: ['patient', 'recovery-plan', 'progress'],
+    queryFn: () => api.getPlanProgress(),
+    enabled: role === 'patient',
+  });
+
+  const todayCalendarQuery = useQuery({
+    queryKey: ['patient', 'calendar', 'today'],
+    queryFn: () => api.getTodayCalendar(),
+    enabled: role === 'patient',
   });
 
   const patientAlertsQuery = useQuery({
     queryKey: ['patient', 'alerts'],
-    queryFn: async () => {
-      const data = await api.getPatientAlerts();
-      return Array.isArray(data) ? data.map((item) => CareAlertSchema.parse(item)) : DEMO_ALERTS;
-    },
+    queryFn: () => api.getPatientAlerts(),
     enabled: role === 'patient',
-    initialData: DEMO_ALERTS,
   });
 
   const patientReportsQuery = useQuery({
     queryKey: ['patient', 'reports'],
     queryFn: () => api.getPatientReports(),
     enabled: role === 'patient',
-    initialData: DEMO_REPORTS,
   });
 
   const patientFileQuery = useQuery({
     queryKey: ['patient', 'file'],
     queryFn: () => api.getPatientFile(),
     enabled: role === 'patient',
-    initialData: DEMO_PATIENT_FILE,
+  });
+
+  const dailyReviewsQuery = useQuery({
+    queryKey: ['patient', 'daily-reviews'],
+    queryFn: () => api.getDailyReviews(),
+    enabled: role === 'patient',
   });
 
   // ─── Doctor Queries ────────────────────────────────────────────────────────
@@ -70,31 +58,36 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
     queryKey: ['doctor', 'patients'],
     queryFn: () => api.getAssignedPatients(),
     enabled: role === 'doctor',
-    initialData: DEMO_PATIENTS_LIST,
   });
 
   const doctorAlertsQuery = useQuery({
     queryKey: ['doctor', 'alerts'],
-    queryFn: async () => {
-      const data = await api.getDoctorAlerts();
-      return Array.isArray(data) ? data.map((item) => CareAlertSchema.parse(item)) : DEMO_ALERTS;
-    },
+    queryFn: () => api.getDoctorAlerts(),
     enabled: role === 'doctor',
-    initialData: DEMO_ALERTS,
   });
 
   const doctorReportsQuery = useQuery({
     queryKey: ['doctor', 'reports'],
-    queryFn: () => api.getDoctorPatientReports('p-1'),
+    queryFn: async () => {
+      const patients = await api.getAssignedPatients();
+      if (patients && patients.length > 0) {
+        return await api.getDoctorPatientReports(patients[0].patient_id);
+      }
+      return [];
+    },
     enabled: role === 'doctor',
-    initialData: DEMO_REPORTS,
   });
 
   const doctorAdherenceQuery = useQuery({
-    queryKey: ['doctor', 'adherence', 'p-1'],
-    queryFn: () => api.getPatientAdherence('p-1'),
+    queryKey: ['doctor', 'adherence'],
+    queryFn: async () => {
+      const patients = await api.getAssignedPatients();
+      if (patients && patients.length > 0) {
+        return await api.getPatientAdherence(patients[0].patient_id);
+      }
+      return null;
+    },
     enabled: role === 'doctor',
-    initialData: DEMO_ADHERENCE,
   });
 
   // ─── Optimistic Task Completion Mutation ──────────────────────────────────
@@ -102,33 +95,10 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
     mutationFn: async ({ taskId, notes }: { taskId: string; notes?: string }) => {
       return await api.completeTask(taskId, notes);
     },
-    onMutate: async ({ taskId }) => {
-      await queryClient.cancelQueries({ queryKey: ['patient', 'recovery-plan'] });
-      const previousPlan = queryClient.getQueryData(['patient', 'recovery-plan']) as any;
-
-      if (previousPlan) {
-        const updatedTasks = previousPlan.tasks.map((task: any) =>
-          task.id === taskId ? { ...task, completed: !task.completed } : task
-        );
-        const completedCount = updatedTasks.filter((t: any) => t.completed).length;
-        const progressPct = Math.round((completedCount / updatedTasks.length) * 100);
-
-        queryClient.setQueryData(['patient', 'recovery-plan'], {
-          ...previousPlan,
-          tasks: updatedTasks,
-          progress_pct: progressPct,
-        });
-      }
-
-      return { previousPlan };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousPlan) {
-        queryClient.setQueryData(['patient', 'recovery-plan'], context.previousPlan);
-      }
-    },
-    onSettled: () => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient', 'calendar', 'today'] });
       queryClient.invalidateQueries({ queryKey: ['patient', 'recovery-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['patient', 'recovery-plan', 'progress'] });
     },
   });
 
@@ -140,30 +110,8 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
       }
       return await api.dismissAlert(alertId);
     },
-    onMutate: async (alertId) => {
-      const queryKey = role === 'doctor' ? ['doctor', 'alerts'] : ['patient', 'alerts'];
-      await queryClient.cancelQueries({ queryKey });
-
-      const previousAlerts = queryClient.getQueryData(queryKey) as any[];
-
-      if (previousAlerts) {
-        queryClient.setQueryData(
-          queryKey,
-          previousAlerts.filter((alert) => alert.id !== alertId)
-        );
-      }
-
-      return { previousAlerts, queryKey };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousAlerts) {
-        queryClient.setQueryData(context.queryKey, context.previousAlerts);
-      }
-    },
-    onSettled: (_data, _error, _variables, context) => {
-      if (context?.queryKey) {
-        queryClient.invalidateQueries({ queryKey: context.queryKey });
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: role === 'doctor' ? ['doctor', 'alerts'] : ['patient', 'alerts'] });
     },
   });
 
@@ -173,7 +121,8 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
       return await api.submitDailyReview({ scale, note });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['patient', 'reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['patient', 'daily-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['doctor', 'patients'] });
     },
   });
 
@@ -184,7 +133,7 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctor', 'patients'] });
-      queryClient.invalidateQueries({ queryKey: ['patient', 'recovery-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['doctor', 'recovery-plans'] });
     },
   });
 
@@ -208,23 +157,27 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
   });
 
   return {
-    patientProfile: patientProfileQuery.data,
-    recoveryPlan: recoveryPlanQuery.data,
-    patientAlerts: patientAlertsQuery.data || DEMO_ALERTS,
-    patientReports: patientReportsQuery.data || DEMO_REPORTS,
-    patientFile: patientFileQuery.data || DEMO_PATIENT_FILE,
-    assignedPatients: assignedPatientsQuery.data || DEMO_PATIENTS_LIST,
-    doctorAlerts: doctorAlertsQuery.data || DEMO_ALERTS,
-    doctorReports: doctorReportsQuery.data || DEMO_REPORTS,
-    doctorAdherence: doctorAdherenceQuery.data || DEMO_ADHERENCE,
-    extractedData: DEMO_EXTRACTED_DATA,
-    reviewsChart: DEMO_REVIEWS_CHART,
+    patientProfile: patientProfileQuery.data || null,
+    recoveryPlan: recoveryPlanQuery.data || null,
+    planProgress: planProgressQuery.data || null,
+    todayCalendar: todayCalendarQuery.data || null,
+    patientAlerts: patientAlertsQuery.data || [],
+    patientReports: patientReportsQuery.data || [],
+    patientFile: patientFileQuery.data || null,
+    dailyReviews: dailyReviewsQuery.data || [],
+    assignedPatients: assignedPatientsQuery.data || [],
+    doctorAlerts: doctorAlertsQuery.data || [],
+    doctorReports: doctorReportsQuery.data || [],
+    doctorAdherence: doctorAdherenceQuery.data || null,
     toggleTaskCompletion,
     resolveAlert,
     submitReview,
     approvePlan,
     cancelPlan,
     updateExtractedData,
-    isLoading: patientProfileQuery.isLoading || recoveryPlanQuery.isLoading,
+    isLoading:
+      role === 'patient'
+        ? patientProfileQuery.isLoading || recoveryPlanQuery.isLoading
+        : assignedPatientsQuery.isLoading,
   };
 };

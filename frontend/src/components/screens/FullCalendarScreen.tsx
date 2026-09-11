@@ -12,7 +12,8 @@ export const FullCalendarScreen: React.FC = () => {
   const startDayOffset = 2; // Tuesday start for Sept 1, 2026
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-  const filteredTasks = recoveryPlan.tasks.filter((task: any) => {
+  const tasks = recoveryPlan?.tasks || [];
+  const filteredTasks = tasks.filter((task: any) => {
     if (categoryFilter === 'ALL') return true;
     return task.category === categoryFilter;
   });
