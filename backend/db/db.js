@@ -5,6 +5,12 @@ dotenv.config();
 
 const { Pool } = pg;
 
+if (!process.env.DATABASE_URL) {
+    throw new Error(
+        'DATABASE_URL is missing. Add it to backend/.env before starting the server or running the seed script.'
+    );
+}
+
 export const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
