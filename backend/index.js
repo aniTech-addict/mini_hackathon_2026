@@ -1,19 +1,36 @@
-const express = require('express');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import db from './db/db.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Built-in Middleware
+// Built-in & Third-party Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health Check / Root Route
-app.get('/', (req, res) => {
-    res.status(200).json({
-        message: 'Backend server is active and running!',
-        status: 'success',
-        timestamp: new Date().toISOString(),
-    });
+app.get('/', async (req, res) => {
+    try {
+        const dbRes = await db.query('SELECT NOW()');
+        res.status(200).json({
+            message: 'Backend server is active and running!',
+            status: 'success',
+            database: 'connected',
+            serverTime: dbRes.rows[0].now,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        res.status(200).json({
+            message: 'Backend server is active and running!',
+            status: 'degraded',
+            database: 'disconnected',
+            dbError: error.message,
+            timestamp: new Date().toISOString(),
+        });
+    }
 });
 
 // 404 Route Handler
