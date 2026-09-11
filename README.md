@@ -1,6 +1,6 @@
-# Recover+
+# Health Deck
 
-Recover+ is a post-operative recovery platform that closes the gap between hospital discharge and clinical follow-up. It gives patients a simple daily recovery checklist and gives doctors visibility into adherence, recovery reviews, medical reports, OCR results, and clinical alerts.
+Health Deck is a post-operative recovery platform that closes the gap between hospital discharge and clinical follow-up. It gives patients a simple daily recovery checklist and gives doctors visibility into adherence, recovery reviews, medical reports, OCR results, and clinical alerts.
 
 The project is a two-part application:
 
