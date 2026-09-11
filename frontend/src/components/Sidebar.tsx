@@ -7,11 +7,8 @@ import {
   FileSearch,
   ScanLine,
   Bell,
-  Clock,
-  Download,
   Users,
   HeartPulse,
-  BarChart3,
   CheckCircle2,
 } from 'lucide-react';
 
@@ -32,25 +29,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, activeSection, onSelectS
     {
       group: 'MY RECOVERY',
       items: [
-        { id: 'current_case', label: 'Current Case', icon: Activity },
+        { id: 'current_case', label: 'Recovery Plan', icon: Activity },
         { id: 'recovery_calendar', label: 'Recovery Calendar', icon: Calendar },
         { id: 'daily_checkin', label: 'Daily Check-in', icon: CheckSquare },
       ],
     },
     {
-      group: 'MEDICAL RECORDS',
+      group: 'CLINICAL RECORDS & ALERTS',
       items: [
         { id: 'medical_file', label: 'Medical File', icon: FileText },
-        { id: 'my_reports', label: 'My Reports', icon: FileSearch },
+        { id: 'my_reports', label: 'Diagnostic Reports', icon: FileSearch },
         { id: 'ocr_results', label: 'OCR Results', icon: ScanLine },
-      ],
-    },
-    {
-      group: 'ACCOUNT',
-      items: [
-        { id: 'alerts', label: 'Alerts', icon: Bell },
-        { id: 'case_history', label: 'Case History', icon: Clock },
-        { id: 'download_summary', label: 'Download Summary', icon: Download },
+        { id: 'alerts', label: 'Care Alerts', icon: Bell },
       ],
     },
   ];
@@ -61,29 +51,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, activeSection, onSelectS
       items: [{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }],
     },
     {
-      group: 'CASE MANAGEMENT',
+      group: 'CASELOAD MANAGEMENT',
       items: [
-        { id: 'active_cases', label: 'Active Cases', icon: Activity },
-        { id: 'patients', label: 'Patients', icon: Users },
+        { id: 'patients', label: 'Assigned Patients', icon: Users },
         { id: 'recovery_plans', label: 'Recovery Plans', icon: HeartPulse },
         { id: 'tracking_calendar', label: 'Tracking Calendar', icon: Calendar },
       ],
     },
     {
-      group: 'CLINICAL REVIEW',
+      group: 'CLINICAL REVIEW & ALERTS',
       items: [
         { id: 'daily_reviews', label: 'Daily Reviews', icon: CheckCircle2 },
-        { id: 'medical_reports', label: 'Medical Reports', icon: FileText },
-        { id: 'ocr_review', label: 'OCR Review', icon: ScanLine },
-        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-      ],
-    },
-    {
-      group: 'HISTORY',
-      items: [
-        { id: 'alerts', label: 'Alerts', icon: Bell },
-        { id: 'completed_cases', label: 'Completed Cases', icon: Clock },
-        { id: 'download_reports', label: 'Download Reports', icon: Download },
+        { id: 'medical_reports', label: 'Medical Reports & Upload', icon: FileText },
+        { id: 'ocr_review', label: 'OCR Validation', icon: ScanLine },
+        { id: 'alerts', label: 'Care Alerts', icon: Bell },
       ],
     },
   ];

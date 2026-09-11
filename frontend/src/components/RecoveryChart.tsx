@@ -8,13 +8,21 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { TrendingUp, Activity } from 'lucide-react';
-import { DEMO_REVIEWS_CHART } from '../lib/api';
+
+const DEFAULT_CHART_DATA = [
+  { date: '01 Sep', score: 4, pain: 7 },
+  { date: '03 Sep', score: 5, pain: 6 },
+  { date: '05 Sep', score: 6, pain: 5 },
+  { date: '07 Sep', score: 7, pain: 4 },
+  { date: '09 Sep', score: 8, pain: 3 },
+  { date: '11 Sep', score: 8, pain: 3 },
+];
 
 interface RecoveryChartProps {
   data?: Array<{ date: string; score: number; pain: number }>;
 }
 
-export const RecoveryChart: React.FC<RecoveryChartProps> = ({ data = DEMO_REVIEWS_CHART }) => {
+export const RecoveryChart: React.FC<RecoveryChartProps> = ({ data = DEFAULT_CHART_DATA }) => {
   // Tracker data across 14 post-op recovery days
   const trackerData = [
     { color: 'bg-emerald-500', tooltip: 'Day 1: Completed 100%' },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HeartPulse, Stethoscope, User, ArrowRight, Lock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { HeartPulse, Stethoscope, User, ArrowRight, Lock } from 'lucide-react';
 import { api } from '../lib/api';
 
 interface AuthScreenProps {

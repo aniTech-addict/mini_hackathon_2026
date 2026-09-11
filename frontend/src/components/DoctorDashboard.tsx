@@ -14,7 +14,11 @@ import { ActivityCalendar } from './ActivityCalendar';
 import { AlertsDrawer } from './AlertsDrawer';
 import { ReportUploadModal } from './Modals';
 
-export const DoctorDashboard: React.FC = () => {
+interface DoctorDashboardProps {
+  onNavigate?: (section: string) => void;
+}
+
+export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onNavigate }) => {
   const { assignedPatients, doctorAlerts, doctorReports, resolveAlert } = useRecovery('doctor');
 
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
@@ -127,7 +131,10 @@ export const DoctorDashboard: React.FC = () => {
               </div>
               <h3 className="text-base font-bold text-slate-900 mt-0.5">Assigned patients</h3>
             </div>
-            <button className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors">
+            <button
+              onClick={() => onNavigate?.('patients')}
+              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors cursor-pointer"
+            >
               View all patients
             </button>
           </div>
@@ -217,8 +224,8 @@ export const DoctorDashboard: React.FC = () => {
           {/* Action Triggers */}
           <div className="space-y-2 pt-2">
             <button
-              onClick={() => setIsReportModalOpen(true)}
-              className="w-full flex items-center justify-between p-3 bg-white border border-slate-200/80 hover:border-emerald-600 hover:bg-emerald-50/30 rounded-xl text-xs font-semibold text-slate-800 transition-all"
+              onClick={() => onNavigate?.('medical_reports')}
+              className="w-full flex items-center justify-between p-3 bg-white border border-slate-200/80 hover:border-emerald-600 hover:bg-emerald-50/30 rounded-xl text-xs font-semibold text-slate-800 transition-all cursor-pointer"
             >
               <span className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-emerald-700" />
@@ -228,8 +235,8 @@ export const DoctorDashboard: React.FC = () => {
             </button>
 
             <button
-              onClick={() => {}}
-              className="w-full flex items-center justify-between p-3 bg-white border border-slate-200/80 hover:border-emerald-600 hover:bg-emerald-50/30 rounded-xl text-xs font-semibold text-slate-800 transition-all"
+              onClick={() => onNavigate?.('recovery_plans')}
+              className="w-full flex items-center justify-between p-3 bg-white border border-slate-200/80 hover:border-emerald-600 hover:bg-emerald-50/30 rounded-xl text-xs font-semibold text-slate-800 transition-all cursor-pointer"
             >
               <span className="flex items-center space-x-2">
                 <ClipboardList className="w-4 h-4 text-emerald-700" />
@@ -239,8 +246,8 @@ export const DoctorDashboard: React.FC = () => {
             </button>
 
             <button
-              onClick={() => {}}
-              className="w-full flex items-center justify-between p-3 bg-white border border-slate-200/80 hover:border-emerald-600 hover:bg-emerald-50/30 rounded-xl text-xs font-semibold text-slate-800 transition-all"
+              onClick={() => onNavigate?.('daily_reviews')}
+              className="w-full flex items-center justify-between p-3 bg-white border border-slate-200/80 hover:border-emerald-600 hover:bg-emerald-50/30 rounded-xl text-xs font-semibold text-slate-800 transition-all cursor-pointer"
             >
               <span className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4 text-emerald-700" />
@@ -253,7 +260,7 @@ export const DoctorDashboard: React.FC = () => {
       </div>
 
       {/* Activity Calendar for Selected Patient */}
-      <ActivityCalendar patientName={selectedPatient?.name || 'Maya Patel'} />
+      <ActivityCalendar patientName={selectedPatient?.full_name || selectedPatient?.name || 'Rahul Sharma'} />
 
       {/* Alerts & Plan Workspace Sections (matching screenshot 5) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

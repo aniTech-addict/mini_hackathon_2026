@@ -14,7 +14,12 @@ export const PatientsDirectoryScreen: React.FC = () => {
     const matchesSearch =
       pName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       planName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = statusFilter === 'all' ? true : p.status === statusFilter;
+    const matchesFilter =
+      statusFilter === 'all'
+        ? true
+        : statusFilter === 'needs_review'
+        ? p.status === 'needs_review' || p.status === 'attention_needed'
+        : p.status === statusFilter;
     return matchesSearch && matchesFilter;
   });
 

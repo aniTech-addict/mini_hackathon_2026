@@ -163,10 +163,12 @@ export const getTaskById = async (patientId, taskId) => {
     return res.rows[0] || null;
 };
 
-export const completeTask = async (patientId, taskId, { schedule_date, schedule_time, notes }) => {
+export const completeTask = async (patientId, taskId, { schedule_date, schedule_time, notes } = {}) => {
     // Verify task belongs to this patient's plan
     const task = await getTaskById(patientId, taskId);
     if (!task) return null;
+
+    const schedDate = schedule_date || getDateStr();
 
     const res = await db.query(
         `INSERT INTO task_completions (task_id, patient_id, schedule_date, schedule_time, notes, status, completed_at)
@@ -174,7 +176,7 @@ export const completeTask = async (patientId, taskId, { schedule_date, schedule_
          ON CONFLICT (task_id, patient_id, schedule_date, schedule_time)
          DO UPDATE SET status = 'completed', notes = EXCLUDED.notes, completed_at = NOW(), updated_at = NOW()
          RETURNING *`,
-        [taskId, patientId, schedule_date, schedule_time || null, notes || null]
+        [taskId, patientId, schedDate, schedule_time || null, notes || null]
     );
     return res.rows[0];
 };
@@ -234,14 +236,22 @@ export const createPatientTask = async (patientId, taskData) => {
 
 // ─── Daily Reviews ────────────────────────────────────────────────────────────
 
-export const submitDailyReview = async (patientId, { recovery_plan_id, review_date, scale, note }) => {
+export const submitDailyReview = async (patientId, { recovery_plan_id, review_date, scale, recovery_score, note } = {}) => {
+    let planId = recovery_plan_id;
+    if (!planId) {
+        const activePlan = await getActivePlanForPatient(patientId);
+        planId = activePlan?.id;
+    }
+    const finalScale = scale !== undefined ? scale : (recovery_score !== undefined ? recovery_score : 8);
+    const finalDate = review_date || getDateStr();
+
     const res = await db.query(
         `INSERT INTO daily_reviews (patient_id, recovery_plan_id, review_date, scale, note)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (patient_id, recovery_plan_id, review_date)
          DO UPDATE SET scale = EXCLUDED.scale, note = EXCLUDED.note, updated_at = NOW()
          RETURNING *`,
-        [patientId, recovery_plan_id, review_date, scale ?? null, note || null]
+        [patientId, planId, finalDate, finalScale ?? null, note || null]
     );
     return res.rows[0];
 };

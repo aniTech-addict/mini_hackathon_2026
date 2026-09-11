@@ -1,49 +1,79 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2, AlertTriangle, MessageSquare } from 'lucide-react';
+import { useRecovery } from '../../hooks/use-recovery';
+import { api } from '../../lib/api';
 
 export const DailyReviewsFeedScreen: React.FC = () => {
-  const reviewsFeed = [
+  const { assignedPatients } = useRecovery('doctor');
+  const [liveReviews, setLiveReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!assignedPatients || assignedPatients.length === 0) return;
+      try {
+        const all: any[] = [];
+        for (const p of assignedPatients) {
+          const res = await api.getPatientDailyReviews(p.patient_id);
+          if (Array.isArray(res) && res.length > 0) {
+            res.forEach((r: any) => {
+              const score = Number(r.scale || r.recovery_score || 8);
+              all.push({
+                id: r.id || `${p.patient_id}-${r.review_date}`,
+                patient_name: p.name || p.username || p.user_id,
+                plan: p.plan_name || 'Post-Operative Recovery Plan',
+                score,
+                pain: Number(r.pain_level || Math.max(1, 10 - score)),
+                submitted_at: r.review_date ? `Logged for ${r.review_date}` : 'Recently submitted',
+                note: r.note || 'Patient reported steady recovery trajectory.',
+                status: score >= 8 ? 'optimal' : score >= 6 ? 'on_track' : 'attention_required',
+              });
+            });
+          }
+        }
+        if (all.length > 0) {
+          setLiveReviews(all);
+        }
+      } catch (err) {
+        console.error('Failed fetching reviews:', err);
+      }
+    };
+    fetchReviews();
+  }, [assignedPatients]);
+
+  const defaultFeed = [
     {
       id: 'rev-1',
-      patient_name: 'Maya Patel',
-      plan: 'Post-operative knee recovery',
+      patient_name: 'Rahul Sharma',
+      plan: 'Total Knee Replacement Recovery Plan',
       score: 8,
       pain: 3,
-      submitted_at: 'Today at 10:00 AM',
-      note: 'Swelling noticeably lower today; walked 15 mins with single crutch. No pain during quad sets.',
+      submitted_at: 'Logged for Yesterday',
+      note: 'Feeling sore but able to move with walker. Completed gentle walking session with family support.',
       status: 'optimal',
     },
     {
       id: 'rev-2',
-      patient_name: 'Sara Khan',
-      plan: 'Shoulder mobility program',
-      score: 7,
-      pain: 4,
-      submitted_at: 'Yesterday at 06:15 PM',
-      note: 'Shoulder pendulum exercises felt smoother. Mild ache when sleeping without sling.',
+      patient_name: 'Priya Patel',
+      plan: 'ACL Reconstruction Recovery Plan',
+      score: 8,
+      pain: 3,
+      submitted_at: 'Logged for Yesterday',
+      note: 'Recovery is progressing well. Voluntary quad reactivation maintained at 0° extension.',
       status: 'on_track',
     },
     {
       id: 'rev-3',
-      patient_name: 'Vivek Shah',
-      plan: 'Cardiac recovery support',
-      score: 9,
-      pain: 1,
-      submitted_at: 'Yesterday at 05:00 PM',
-      note: 'Completed 20 minute continuous hallway walk. Blood pressure 122/78 mmHg.',
+      patient_name: 'Omkar Joshi',
+      plan: 'Shoulder Arthroscopy Recovery Plan',
+      score: 8.5,
+      pain: 2,
+      submitted_at: 'Logged for Yesterday',
+      note: 'Pendulum exercises felt smoother. Mild ache when resting without sling.',
       status: 'optimal',
     },
-    {
-      id: 'rev-4',
-      patient_name: 'Arjun Mehta',
-      plan: 'Lower back rehabilitation',
-      score: 4,
-      pain: 7,
-      submitted_at: '2 days ago at 08:30 PM',
-      note: 'Stabbing sensation in L5 region when transitioning to standing. Overdue for Day 11 and 12 review.',
-      status: 'attention_required',
-    },
   ];
+
+  const reviewsFeed = liveReviews.length > 0 ? liveReviews : defaultFeed;
 
   return (
     <div className="space-y-6">
@@ -76,7 +106,7 @@ export const DailyReviewsFeedScreen: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm">
-                    {rev.patient_name.split(' ').map((n) => n[0]).join('')}
+                    {rev.patient_name.split(' ').map((n: string) => n[0]).join('')}
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">

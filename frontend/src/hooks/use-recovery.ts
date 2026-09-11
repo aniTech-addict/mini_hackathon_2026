@@ -92,11 +92,11 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
 
   // ─── Optimistic Task Completion Mutation ──────────────────────────────────
   const toggleTaskCompletion = useMutation({
-    mutationFn: async ({ taskId, notes }: { taskId: string; notes?: string }) => {
-      return await api.completeTask(taskId, notes);
+    mutationFn: async ({ taskId, notes, scheduleDate }: { taskId: string; notes?: string; scheduleDate?: string }) => {
+      return await api.completeTask(taskId, notes, scheduleDate);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['patient', 'calendar', 'today'] });
+      queryClient.invalidateQueries({ queryKey: ['patient', 'calendar'] });
       queryClient.invalidateQueries({ queryKey: ['patient', 'recovery-plan'] });
       queryClient.invalidateQueries({ queryKey: ['patient', 'recovery-plan', 'progress'] });
     },

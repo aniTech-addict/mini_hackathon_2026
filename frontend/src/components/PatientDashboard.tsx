@@ -14,7 +14,11 @@ import { RecoveryChart } from './RecoveryChart';
 import { AlertsDrawer } from './AlertsDrawer';
 import { DailyReviewModal } from './Modals';
 
-export const PatientDashboard: React.FC = () => {
+interface PatientDashboardProps {
+  onNavigate?: (section: string) => void;
+}
+
+export const PatientDashboard: React.FC<PatientDashboardProps> = ({ onNavigate }) => {
   const { recoveryPlan, planProgress, patientAlerts, dailyReviews, toggleTaskCompletion, resolveAlert, submitReview } =
     useRecovery('patient');
 
@@ -66,7 +70,10 @@ export const PatientDashboard: React.FC = () => {
       {/* 4 Metric Header Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Plan progress */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
+        <div
+          onClick={() => onNavigate?.('current_case')}
+          className="bg-white border border-slate-200/80 hover:border-emerald-600 rounded-2xl p-5 shadow-xs flex items-center justify-between cursor-pointer transition-all hover:bg-slate-50/50"
+        >
           <div>
             <div className="text-[11px] font-semibold text-slate-400">Plan progress</div>
             <div className="text-xl font-extrabold text-slate-900 mt-1">
@@ -82,7 +89,10 @@ export const PatientDashboard: React.FC = () => {
         </div>
 
         {/* Card 2: Today's tasks */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
+        <div
+          onClick={() => onNavigate?.('recovery_calendar')}
+          className="bg-white border border-slate-200/80 hover:border-emerald-600 rounded-2xl p-5 shadow-xs flex items-center justify-between cursor-pointer transition-all hover:bg-slate-50/50"
+        >
           <div>
             <div className="text-[11px] font-semibold text-slate-400">Today&apos;s tasks</div>
             <div className="text-xl font-extrabold text-slate-900 mt-1">
@@ -96,11 +106,14 @@ export const PatientDashboard: React.FC = () => {
         </div>
 
         {/* Card 3: Next review */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
+        <div
+          onClick={() => setIsReviewModalOpen(true)}
+          className="bg-white border border-slate-200/80 hover:border-emerald-600 rounded-2xl p-5 shadow-xs flex items-center justify-between cursor-pointer transition-all hover:bg-slate-50/50"
+        >
           <div>
             <div className="text-[11px] font-semibold text-slate-400">Next review</div>
             <div className="text-xl font-extrabold text-slate-900 mt-1">6:00 PM</div>
-            <div className="text-[11px] text-slate-500 mt-0.5">Daily recovery check-in</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Click to submit daily review</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
             <MessageSquare className="w-5 h-5" />
@@ -108,7 +121,10 @@ export const PatientDashboard: React.FC = () => {
         </div>
 
         {/* Card 4: Care team */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex items-center justify-between">
+        <div
+          onClick={() => onNavigate?.('medical_file')}
+          className="bg-white border border-slate-200/80 hover:border-emerald-600 rounded-2xl p-5 shadow-xs flex items-center justify-between cursor-pointer transition-all hover:bg-slate-50/50"
+        >
           <div>
             <div className="text-[11px] font-semibold text-slate-400">Care team</div>
             <div className="text-xl font-extrabold text-slate-900 mt-1">Dr. Ananya Rao</div>
@@ -224,7 +240,7 @@ export const PatientDashboard: React.FC = () => {
       <DailyReviewModal
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
-        onSubmit={(scale, note) => submitReview.mutate({ scale, note })}
+        onSubmit={({ scale, note }) => submitReview.mutate({ scale, note })}
       />
     </div>
   );

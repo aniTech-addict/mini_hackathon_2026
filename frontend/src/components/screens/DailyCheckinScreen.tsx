@@ -3,11 +3,27 @@ import { CheckSquare, Send, CheckCircle2, HeartPulse, History, Sparkles } from '
 import { useRecovery } from '../../hooks/use-recovery';
 
 export const DailyCheckinScreen: React.FC = () => {
-  const { submitReview, reviewsChart } = useRecovery('patient');
+  const { submitReview, dailyReviews } = useRecovery('patient');
   const [score, setScore] = useState<number>(8);
   const [painLevel, setPainLevel] = useState<number>(3);
   const [note, setNote] = useState<string>('Knee feels stable today with mild stiffness in morning. Completed 15 min walk.');
   const [submittedToday, setSubmittedToday] = useState<boolean>(false);
+
+  const reviewsList =
+    dailyReviews && dailyReviews.length > 0
+      ? dailyReviews.map((r: any) => ({
+          date: r.review_date
+            ? new Date(r.review_date).toLocaleDateString('en-US', { day: '2-digit', month: 'short' })
+            : 'Recent',
+          score: r.scale || r.recovery_score || 8,
+          pain: r.pain_level || 3,
+          note: r.note || 'Logged on schedule. Recovery metric trajectory shows steady improvement.',
+        }))
+      : [
+          { date: '11 Sep', score: 8, pain: 3, note: 'Feeling steady today, completed walking.' },
+          { date: '09 Sep', score: 7, pain: 4, note: 'Mild stiffness, ice applied.' },
+          { date: '07 Sep', score: 6, pain: 5, note: 'Exercises completed with care.' },
+        ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,7 +179,7 @@ export const DailyCheckinScreen: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {reviewsChart.map((rev, idx) => (
+            {reviewsList.map((rev, idx) => (
               <div key={idx} className="p-3 rounded-xl border border-slate-100 bg-slate-50/60 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800">{rev.date} 2026</span>
@@ -177,7 +193,7 @@ export const DailyCheckinScreen: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Logged on schedule. Recovery metric trajectory shows steady improvement.
+                  {rev.note}
                 </p>
               </div>
             ))}
