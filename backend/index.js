@@ -62,6 +62,10 @@ app.use((err, req, res, next) => {
     res.sendStructuredResponse(err.status || 500, err.message || 'Internal Server Error', null);
 });
 
-app.listen(PORT, () => {
-    console.log(`Backend server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+        console.log(`Backend server running on http://localhost:${PORT}`);
+    });
+}
+
+export default app;
