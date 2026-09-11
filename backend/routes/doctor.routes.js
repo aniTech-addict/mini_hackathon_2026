@@ -9,6 +9,9 @@ import {
     getPatientReports,
     getReportById,
     getReportStatus,
+    processReport,
+    getExtractedData,
+    updateExtractedData,
     generateRecoveryPlan,
     getPatientRecoveryPlans,
     getRecoveryPlanById,
@@ -44,6 +47,11 @@ router.post('/patients/:patientId/reports', upload.single('file'), uploadReport)
 router.get('/patients/:patientId/reports', getPatientReports);
 router.get('/reports/:reportId', getReportById);
 router.get('/reports/:reportId/status', getReportStatus);
+
+// 3.3 OCR & AI Processing
+router.post('/reports/:reportId/process', processReport);
+router.get('/reports/:reportId/extracted-data', getExtractedData);
+router.patch('/reports/:reportId/extracted-data', updateExtractedData);
 
 // 3.4 Recovery Plan Generation
 router.post('/patients/:patientId/recovery-plans/generate', generateRecoveryPlan);

@@ -82,6 +82,40 @@ export const getReportStatus = async (req, res, next) => {
     }
 };
 
+// ─── 3.3 OCR & AI Processing ─────────────────────────────────────────────────
+
+export const processReport = async (req, res, next) => {
+    try {
+        const data = await DoctorService.processReport(did(req), req.params.reportId);
+        if (!data) return res.sendStructuredResponse(404, 'Report not found or access denied', null);
+        return res.sendStructuredResponse(200, 'Report OCR and AI processing completed', data);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getExtractedData = async (req, res, next) => {
+    try {
+        const data = await DoctorService.getExtractedData(did(req), req.params.reportId);
+        if (!data) return res.sendStructuredResponse(404, 'Extracted data not found or access denied', null);
+        return res.sendStructuredResponse(200, 'Report extracted data fetched', data);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const updateExtractedData = async (req, res, next) => {
+    try {
+        const { extracted_data } = req.body;
+        if (!extracted_data) return res.sendStructuredResponse(400, 'extracted_data is required in body', null);
+        const data = await DoctorService.updateExtractedData(did(req), req.params.reportId, extracted_data);
+        if (!data) return res.sendStructuredResponse(404, 'Report not found or access denied', null);
+        return res.sendStructuredResponse(200, 'Extracted data updated', data);
+    } catch (err) {
+        next(err);
+    }
+};
+
 // ─── 3.4 Recovery Plan Generation ────────────────────────────────────────────
 
 export const generateRecoveryPlan = async (req, res, next) => {

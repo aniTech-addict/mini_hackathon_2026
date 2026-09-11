@@ -1,4 +1,5 @@
 import db from '../db/db.js';
+import { processReportFile } from './ocr.service.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -451,4 +452,92 @@ export const resolveDoctorAlert = async (doctorId, alertId) => {
         [alertId]
     );
     return res.rows[0];
+};
+
+// ─── 3.3 OCR & AI Processing ─────────────────────────────────────────────────
+
+export const processReport = async (doctorId, reportId) => {
+    // Verify report belongs to doctor's patient
+    const reportRes = await db.query(
+        `SELECT mr.* FROM medical_reports mr
+         JOIN patients p ON p.patient_id = mr.patient_id
+         WHERE mr.report_id = $1 AND p.doctor_id = $2`,
+        [reportId, doctorId]
+    );
+    const report = reportRes.rows[0];
+    if (!report) return null;
+
+    // Set status to processing
+    await db.query(
+        `UPDATE medical_reports SET ocr_status = 'processing' WHERE report_id = $1`,
+        [reportId]
+    );
+
+    try {
+        // Run OCR + AI pipeline
+        const { raw_text, structured } = await processReportFile(report.file_url, report.mime_type);
+
+        // Upsert extracted data
+        await db.query(
+            `INSERT INTO report_extracted_data (report_id, extracted_data, parser_version)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (report_id)
+             DO UPDATE SET extracted_data = EXCLUDED.extracted_data, updated_at = NOW()`,
+            [reportId, JSON.stringify(structured), 'tesseract+llama-3.3-70b-v1']
+        );
+
+        // Update report: store ocr_text + mark completed
+        await db.query(
+            `UPDATE medical_reports
+             SET ocr_status = 'completed', ocr_text = $1, processed_at = NOW()
+             WHERE report_id = $2`,
+            [raw_text, reportId]
+        );
+
+        return { report_id: reportId, ocr_status: 'completed', extracted_data: structured };
+    } catch (err) {
+        // Mark as failed on error
+        await db.query(
+            `UPDATE medical_reports SET ocr_status = 'failed' WHERE report_id = $1`,
+            [reportId]
+        );
+        throw err;
+    }
+};
+
+export const getExtractedData = async (doctorId, reportId) => {
+    // Verify ownership
+    const check = await db.query(
+        `SELECT mr.report_id FROM medical_reports mr
+         JOIN patients p ON p.patient_id = mr.patient_id
+         WHERE mr.report_id = $1 AND p.doctor_id = $2`,
+        [reportId, doctorId]
+    );
+    if (!check.rows[0]) return null;
+
+    const res = await db.query(
+        'SELECT * FROM report_extracted_data WHERE report_id = $1',
+        [reportId]
+    );
+    return res.rows[0] || null;
+};
+
+export const updateExtractedData = async (doctorId, reportId, extractedData) => {
+    // Verify ownership
+    const check = await db.query(
+        `SELECT mr.report_id FROM medical_reports mr
+         JOIN patients p ON p.patient_id = mr.patient_id
+         WHERE mr.report_id = $1 AND p.doctor_id = $2`,
+        [reportId, doctorId]
+    );
+    if (!check.rows[0]) return null;
+
+    const res = await db.query(
+        `UPDATE report_extracted_data
+         SET extracted_data = $1, updated_at = NOW()
+         WHERE report_id = $2
+         RETURNING *`,
+        [JSON.stringify(extractedData), reportId]
+    );
+    return res.rows[0] || null;
 };
