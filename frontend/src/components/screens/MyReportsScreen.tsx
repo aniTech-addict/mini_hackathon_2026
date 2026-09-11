@@ -1,0 +1,94 @@
+import React, { useState } from 'react';
+import { FileSearch, FileText, Clock, Upload, ShieldCheck, Eye } from 'lucide-react';
+import { useRecovery } from '../../hooks/use-recovery';
+import { ReportUploadModal } from '../Modals';
+
+interface MyReportsScreenProps {
+  onViewOcr: (reportId: string) => void;
+}
+
+export const MyReportsScreen: React.FC<MyReportsScreenProps> = ({ onViewOcr }) => {
+  const { patientReports } = useRecovery('patient');
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      {/* Top Banner */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold mb-2">
+            <FileSearch className="w-3.5 h-3.5" />
+            <span>Digital Document Archive</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">My Medical Reports</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Access hospital discharge summaries, post-op imaging, and AI clinical entity extractions.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setIsUploadOpen(true)}
+          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs transition-colors shadow-xs"
+        >
+          <Upload className="w-4 h-4" />
+          <span>Upload Document</span>
+        </button>
+      </div>
+
+      {/* Reports Table Card */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-slate-900">Archived Clinical Reports</h2>
+          <span className="text-xs text-slate-400 font-medium">{patientReports.length} Documents</span>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {patientReports.map((report: any) => (
+            <div key={report.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start space-x-3.5">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                  <FileText className="w-5 h-5 text-emerald-700" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-bold text-slate-800">{report.file_name}</span>
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                      {report.report_type.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    Uploaded on {new Date(report.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3 self-end sm:self-center">
+                {report.ocr_status === 'COMPLETED' ? (
+                  <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>OCR Processed</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold">
+                    <Clock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Processing</span>
+                  </span>
+                )}
+
+                <button
+                  onClick={() => onViewOcr(report.id)}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5 text-slate-500" />
+                  <span>View Entities</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <ReportUploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
+    </div>
+  );
+};

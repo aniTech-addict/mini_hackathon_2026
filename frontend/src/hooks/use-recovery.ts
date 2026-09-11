@@ -1,5 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, DEMO_PATIENTS_LIST, DEMO_TASKS, DEMO_ALERTS, DEMO_REVIEWS_CHART } from '../lib/api';
+import {
+  api,
+  DEMO_PATIENTS_LIST,
+  DEMO_TASKS,
+  DEMO_ALERTS,
+  DEMO_REVIEWS_CHART,
+  DEMO_REPORTS,
+  DEMO_EXTRACTED_DATA,
+  DEMO_PATIENT_FILE,
+  DEMO_ADHERENCE,
+} from '../lib/api';
 import { RecoveryPlanSchema, CareAlertSchema } from '../lib/schemas/recovery';
 
 export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
@@ -35,10 +45,24 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
     queryKey: ['patient', 'alerts'],
     queryFn: async () => {
       const data = await api.getPatientAlerts();
-      return Array.isArray(data) ? data.map(item => CareAlertSchema.parse(item)) : DEMO_ALERTS;
+      return Array.isArray(data) ? data.map((item) => CareAlertSchema.parse(item)) : DEMO_ALERTS;
     },
     enabled: role === 'patient',
     initialData: DEMO_ALERTS,
+  });
+
+  const patientReportsQuery = useQuery({
+    queryKey: ['patient', 'reports'],
+    queryFn: () => api.getPatientReports(),
+    enabled: role === 'patient',
+    initialData: DEMO_REPORTS,
+  });
+
+  const patientFileQuery = useQuery({
+    queryKey: ['patient', 'file'],
+    queryFn: () => api.getPatientFile(),
+    enabled: role === 'patient',
+    initialData: DEMO_PATIENT_FILE,
   });
 
   // ─── Doctor Queries ────────────────────────────────────────────────────────
@@ -53,10 +77,24 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
     queryKey: ['doctor', 'alerts'],
     queryFn: async () => {
       const data = await api.getDoctorAlerts();
-      return Array.isArray(data) ? data.map(item => CareAlertSchema.parse(item)) : DEMO_ALERTS;
+      return Array.isArray(data) ? data.map((item) => CareAlertSchema.parse(item)) : DEMO_ALERTS;
     },
     enabled: role === 'doctor',
     initialData: DEMO_ALERTS,
+  });
+
+  const doctorReportsQuery = useQuery({
+    queryKey: ['doctor', 'reports'],
+    queryFn: () => api.getDoctorPatientReports('p-1'),
+    enabled: role === 'doctor',
+    initialData: DEMO_REPORTS,
+  });
+
+  const doctorAdherenceQuery = useQuery({
+    queryKey: ['doctor', 'adherence', 'p-1'],
+    queryFn: () => api.getPatientAdherence('p-1'),
+    enabled: role === 'doctor',
+    initialData: DEMO_ADHERENCE,
   });
 
   // ─── Optimistic Task Completion Mutation ──────────────────────────────────
@@ -139,16 +177,54 @@ export const useRecovery = (role: 'patient' | 'doctor' = 'patient') => {
     },
   });
 
+  // ─── Plan Approval & Cancellation Mutations (Doctor) ──────────────────────
+  const approvePlan = useMutation({
+    mutationFn: async (planId: string) => {
+      return await api.approveRecoveryPlan(planId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor', 'patients'] });
+      queryClient.invalidateQueries({ queryKey: ['patient', 'recovery-plan'] });
+    },
+  });
+
+  const cancelPlan = useMutation({
+    mutationFn: async (planId: string) => {
+      return await api.cancelRecoveryPlan(planId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor', 'patients'] });
+    },
+  });
+
+  // ─── OCR Update Mutation ──────────────────────────────────────────────────
+  const updateExtractedData = useMutation({
+    mutationFn: async ({ reportId, data }: { reportId: string; data: any }) => {
+      return await api.updateDoctorExtractedData(reportId, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['doctor', 'reports'] });
+    },
+  });
+
   return {
     patientProfile: patientProfileQuery.data,
     recoveryPlan: recoveryPlanQuery.data,
     patientAlerts: patientAlertsQuery.data || DEMO_ALERTS,
+    patientReports: patientReportsQuery.data || DEMO_REPORTS,
+    patientFile: patientFileQuery.data || DEMO_PATIENT_FILE,
     assignedPatients: assignedPatientsQuery.data || DEMO_PATIENTS_LIST,
     doctorAlerts: doctorAlertsQuery.data || DEMO_ALERTS,
+    doctorReports: doctorReportsQuery.data || DEMO_REPORTS,
+    doctorAdherence: doctorAdherenceQuery.data || DEMO_ADHERENCE,
+    extractedData: DEMO_EXTRACTED_DATA,
     reviewsChart: DEMO_REVIEWS_CHART,
     toggleTaskCompletion,
     resolveAlert,
     submitReview,
+    approvePlan,
+    cancelPlan,
+    updateExtractedData,
     isLoading: patientProfileQuery.isLoading || recoveryPlanQuery.isLoading,
   };
 };
