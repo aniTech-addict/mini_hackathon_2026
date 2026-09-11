@@ -11,7 +11,7 @@ CREATE TABLE users (
     role VARCHAR(20) NOT NULL CHECK (role IN ('patient', 'doctor', 'admin')),
     user_id VARCHAR(100) NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    phone_number NUMBER NOT NULL UNIQUE,
+    phone_number INTEGER NOT NULL UNIQUE,
     age INTEGER CHECK (age IS NULL OR age >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
