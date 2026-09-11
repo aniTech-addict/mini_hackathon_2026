@@ -5,6 +5,9 @@ import db from './db/db.js';
 
 // Routes
 import authRoutes from './routes/auth.routes.js';
+import patientRoutes from './routes/patient.routes.js';
+import patientDataRoutes from './routes/patientData.routes.js';
+import doctorRoutes from './routes/doctor.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,6 +31,9 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/patients', patientRoutes);
+app.use('/api/v1/patient', patientDataRoutes);
+app.use('/api/v1/doctor', doctorRoutes);
 
 // Health Check
 app.get('/', async (req, res) => {
